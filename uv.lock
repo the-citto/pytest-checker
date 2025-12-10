@@ -487,8 +487,8 @@ wheels = [
 ]
 
 [[package]]
-name = "pytest-checks"
-version = "0.1.0"
+name = "pytest-checkers"
+version = "0.1.1"
 source = { editable = "." }
 
 [package.optional-dependencies]
@@ -546,13 +546,13 @@ requires-dist = [
     { name = "isort", marker = "extra == 'isort'", specifier = ">=7.0.0" },
     { name = "mypy", marker = "extra == 'mypy'", specifier = ">=1.19.0" },
     { name = "pyright", extras = ["nodejs"], marker = "extra == 'pyright'", specifier = ">=1.1.407" },
-    { name = "pytest-checks", extras = ["black"], marker = "extra == 'all'" },
-    { name = "pytest-checks", extras = ["flake8"], marker = "extra == 'all'" },
-    { name = "pytest-checks", extras = ["isort"], marker = "extra == 'all'" },
-    { name = "pytest-checks", extras = ["mypy"], marker = "extra == 'all'" },
-    { name = "pytest-checks", extras = ["pyright"], marker = "extra == 'all'" },
-    { name = "pytest-checks", extras = ["ruff"], marker = "extra == 'all'" },
-    { name = "pytest-checks", extras = ["ty"], marker = "extra == 'all'" },
+    { name = "pytest-checkers", extras = ["black"], marker = "extra == 'all'" },
+    { name = "pytest-checkers", extras = ["flake8"], marker = "extra == 'all'" },
+    { name = "pytest-checkers", extras = ["isort"], marker = "extra == 'all'" },
+    { name = "pytest-checkers", extras = ["mypy"], marker = "extra == 'all'" },
+    { name = "pytest-checkers", extras = ["pyright"], marker = "extra == 'all'" },
+    { name = "pytest-checkers", extras = ["ruff"], marker = "extra == 'all'" },
+    { name = "pytest-checkers", extras = ["ty"], marker = "extra == 'all'" },
     { name = "ruff", marker = "extra == 'ruff'", specifier = ">=0.14.8" },
     { name = "ty", marker = "extra == 'ty'", specifier = ">=0.0.1a33" },
 ]

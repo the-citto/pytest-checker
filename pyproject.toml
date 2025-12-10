@@ -1,5 +1,5 @@
 [project]
-name = "pytest-checks"
+name = "pytest-checkers"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -32,13 +32,13 @@ ty = [
     "ty>=0.0.1a33",
 ]
 all = [
-    "pytest-checks[black]",
-    "pytest-checks[flake8]",
-    "pytest-checks[isort]",
-    "pytest-checks[mypy]",
-    "pytest-checks[pyright]",
-    "pytest-checks[ruff]",
-    "pytest-checks[ty]",
+    "pytest-checkers[black]",
+    "pytest-checkers[flake8]",
+    "pytest-checkers[isort]",
+    "pytest-checkers[mypy]",
+    "pytest-checkers[pyright]",
+    "pytest-checkers[ruff]",
+    "pytest-checkers[ty]",
 ]
 
 [dependency-groups]

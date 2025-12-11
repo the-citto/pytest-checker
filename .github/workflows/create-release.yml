@@ -33,23 +33,19 @@ jobs:
 
       - name: Fetch all tags
         run: git fetch --tags
-      - name: Check if tag already exists
-        id: check_tag
-        run: |
-          TAG=$(git tag --list "$PACKAGE_VERSION")
-          echo "TAG_VERSION=$TAG" >> "$GITHUB_ENV"
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: ${{ env.PACKAGE_VERSION != env.TAG_VERSION }}
-        with:
-          tag_name: ${{ env.PACKAGE_VERSION }}
-          name: Release v${{ env.PACKAGE_VERSION }}
-          body: |
-            Automated release created from push to main branch.
-            See `pyproject.toml` for version details.
-          draft: false
-          prerelease: false
+      - name: Create New GitHub Release
+        run: |
+          if gh release view "${{ env.PACKAGE_VERSION }}" > /dev/null 2>&1; then
+            echo "::warning::Push to main without a new package version."
+            exit 1
+          else
+            gh release create ${{ env.PACKAGE_VERSION }} \
+              --title "Release v${{ env.PACKAGE_VERSION }}" \
+              --body "Automated release created from push to main branch." \
+              --draft=false \
+              --prerelease=false
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

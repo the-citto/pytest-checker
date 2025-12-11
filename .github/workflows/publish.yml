@@ -3,10 +3,19 @@ name: Publish Package to PyPI
 on:
   release:
     types: [published, edited]
+  workflow_run:
+    workflows: ["Create GitHub Release from pyproject.toml version"] 
+    types:
+      - completed
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   pypi-publish:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'release' }}
     environment:
       name: pypi
     permissions:
@@ -14,8 +23,19 @@ jobs:
       id-token: write
 
     steps:
+      - name: Get commit SHA for checkout
+        id: sha_finder
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "SHA_TO_USE=${{ github.event.release.target_commitish }}" >> "$GITHUB_ENV"
+          elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            echo "SHA_TO_USE=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_ENV"
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA_TO_USE }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5

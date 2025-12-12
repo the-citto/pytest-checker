@@ -1,14 +1,11 @@
 name: Create GitHub Release from pyproject.toml version
 
 on:
-  push:
+  pull_request:
+    types: 
+      - closed
     branches:
       - main
-#   pull_request:
-#     types: [closed]
-#     branches:
-#       - main
-#     if: github.event.pull_request.merged == true
 
 permissions:
   contents: write
@@ -16,6 +13,7 @@ permissions:
 jobs:
   create-release:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,7 +40,7 @@ jobs:
           else
             gh release create ${{ env.PACKAGE_VERSION }} \
               --title "Release v${{ env.PACKAGE_VERSION }}" \
-              --body "Automated release created from push to main branch." \
+              --body "Automated release created on new project version." \
               --draft=false \
               --prerelease=false
           fi

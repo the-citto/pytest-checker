@@ -80,8 +80,11 @@ typeCheckingMode = "strict"
 venvPath = "."
 venv = ".venv"
 
+[tool.ty.terminal]
+
 [tool.mypy]
 strict = true
+mypy_path = "src, tests"
 disallow_untyped_defs = true
 exclude = ["build"]
 

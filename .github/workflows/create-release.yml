@@ -40,7 +40,7 @@ jobs:
           else
             gh release create ${{ env.PACKAGE_VERSION }} \
               --title "Release v${{ env.PACKAGE_VERSION }}" \
-              --body "Automated release created on new project version." \
+              --notes "Automated release created on new project version." \
               --draft=false \
               --prerelease=false
           fi

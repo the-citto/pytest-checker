@@ -1,6 +1,6 @@
 [project]
 name = "pytest-checkers"
-version = "0.1.1"
+version = "0.2.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -16,6 +16,9 @@ classifiers = [
 requires-python = ">=3.13"
 dependencies = []
 
+[project.entry-points."pytest11"]
+checkers = "pytest_checkers.checkers"
+
 [project.optional-dependencies]
 black = [
     "black>=25.12.0",
@@ -24,7 +27,7 @@ flake8 = [
     "flake8>=7.3.0",
 ]
 isort = [
-    "isort>=7.0.0",
+    "isort[colors]>=7.0.0",
 ]
 mypy = [
     "mypy>=1.19.0",
@@ -55,7 +58,7 @@ dev = [
 test = [
     "black>=25.12.0",
     "flake8>=7.3.0",
-    "isort>=7.0.0",
+    "isort[colors]>=7.0.0",
     "mypy>=1.19.0",
     "pyright[nodejs]>=1.1.407",
     "pytest>=9.0.2",

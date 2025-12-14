@@ -12,4 +12,44 @@
 
 # pytest-checkers
 
+Use desired LSPs, type checkers, linters, and formatters (diff only).
+
+Available optional dependencies:
+
+`pytest_checkers[black,isort,flake8,mypy,pyright,ruff,ty]`
+
+either of the above, or
+
+`pytest_checkers[all]`
+
+## Note
+
+pyright installs `pyright[nodejs]`
+
+isort install `isort[colors]`
+
+<br>
+
+simple flags: `--ruff` `--mypy` etc. or just `--all` for all the dependencies installed. 
+
+Use `pyproject.toml` (and `.flake8` until they finally decide to move)
+for your preferred settings for every tool.
+
+## Kudos
+
+All of them are somewhat different from what I wanted and made here:
+
+[pytest-black](https://github.com/coherent-oss/pytest-black)
+
+[pytest-isort](https://github.com/stephrdev/pytest-isort)
+
+[pytest-flake8](https://github.com/coherent-oss/pytest-flake8)
+
+[pytest-mypy](https://github.com/realpython/pytest-mypy)
+
+[pytest-pyright](https://github.com/RobertCraigie/pytest-pyright)
+
+[pytest-ruff](https://github.com/businho/pytest-ruff)
+
+[pytest-ty](https://github.com/boidolr/pytest-ty)
 

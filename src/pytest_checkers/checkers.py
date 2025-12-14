@@ -47,13 +47,13 @@ class CheckersPlugin(abc.ABC):
 
     tool: Tool
     header_markup: EscTable
-    cmd_output: str = ""
-    cmd_returncode: int = 0
     finish_msg: str = ""
 
     def __init__(self, config: pytest.Config) -> None:
         """Init."""
         self.config = config
+        self.cmd_output = ""
+        self.cmd_returncode = 0
 
     @property
     @abc.abstractmethod
@@ -69,27 +69,33 @@ class CheckersPlugin(abc.ABC):
         return env_vars
 
     @property
-    @abc.abstractmethod
+    # @abc.abstractmethod
     def is_error(self) -> bool:
         """Tool-specific error logic."""
         return self.cmd_returncode != 0
 
-    def append_error(self, session: pytest.Session) -> None:
-        """Append error."""
+    def generate_report(self, session: pytest.Session, *, outcome: typing.Literal["passed", "failed"]) -> None:
+        """Generate report."""
         project_root = session.config.rootpath
         nodeid = f"{self.tool} check"
+        location = (str(project_root), 0, nodeid)
+        longrepr: tuple[str, int, str] | None = None
+        sections: list[tuple[str, str]] = []
+        if outcome == "failed":
+            longrepr = (f"{self.tool} failure", 0, "code quality checks failed, see output above.")
+            sections = [(f"{self.tool} output", self.cmd_output)]
         report = TestReport(
             nodeid=nodeid,
-            location=(str(project_root), 0, nodeid),
+            location=location,
             keywords={nodeid: 1},
             when="call",
-            longrepr=(f"{self.tool.title()} Failure", 0, "Code quality checks failed. See output above."),
-            sections=[(f"{self.tool.title()} Output", self.cmd_output)],
-            outcome="failed",
+            longrepr=longrepr,
+            sections=sections,
+            outcome=outcome,
         )
         reporter = session.config.pluginmanager.get_plugin("terminalreporter")
         if reporter:
-            reporter.stats.setdefault("failed", []).append(report)
+            reporter.stats.setdefault(outcome, []).append(report)
 
     def pytest_sessionfinish(self, session: pytest.Session) -> None:
         """Pytest session finish."""
@@ -101,9 +107,10 @@ class CheckersPlugin(abc.ABC):
         self.cmd_output = result.stdout + result.stderr
         self.cmd_returncode = result.returncode
         if self.is_error:
-            self.append_error(session)
+            self.generate_report(session, outcome="failed")
         else:
             self.cmd_output += self.finish_msg
+            self.generate_report(session, outcome="passed")
 
     def pytest_terminal_summary(self, terminalreporter: TerminalReporter) -> None:
         """Pytest terminal summary."""
@@ -126,11 +133,6 @@ class PyrightPlugin(CheckersPlugin):
         """Command flags."""
         return []
 
-    @property
-    def is_error(self) -> bool:
-        """Tool-specific error logic."""
-        return super().is_error
-
 
 class TyPlugin(CheckersPlugin):
     """Ty plugin."""
@@ -142,11 +144,6 @@ class TyPlugin(CheckersPlugin):
     def cmd_flags(self) -> list[str]:
         """Command flags."""
         return ["check"]
-
-    @property
-    def is_error(self) -> bool:
-        """Tool-specific error logic."""
-        return super().is_error
 
 
 class MypyPlugin(CheckersPlugin):
@@ -160,11 +157,6 @@ class MypyPlugin(CheckersPlugin):
         """Command flags."""
         return []
 
-    @property
-    def is_error(self) -> bool:
-        """Tool-specific error logic."""
-        return super().is_error
-
 
 class RuffPlugin(CheckersPlugin):
     """Ruff plugin."""
@@ -176,11 +168,6 @@ class RuffPlugin(CheckersPlugin):
     def cmd_flags(self) -> list[str]:
         """Command flags."""
         return ["check"]
-
-    @property
-    def is_error(self) -> bool:
-        """Tool-specific error logic."""
-        return super().is_error
 
 
 class Flake8Plugin(CheckersPlugin):
@@ -195,11 +182,6 @@ class Flake8Plugin(CheckersPlugin):
         """Command flags."""
         return ["--color=always"]
 
-    @property
-    def is_error(self) -> bool:
-        """Tool-specific error logic."""
-        return super().is_error
-
 
 class BlackPlugin(CheckersPlugin):
     """Black plugin."""
@@ -208,14 +190,14 @@ class BlackPlugin(CheckersPlugin):
     header_markup = "cyan"
 
     @property
-    def cmd_flags(self) -> list[str]:
-        """Command flags."""
-        return ["--diff", "--color"]
-
-    @property
     def is_error(self) -> bool:
         """Tool-specific error logic."""
         return "@@" in self.cmd_output
+
+    @property
+    def cmd_flags(self) -> list[str]:
+        """Command flags."""
+        return ["--diff", "--color"]
 
 
 class IsortPlugin(CheckersPlugin):
@@ -226,46 +208,45 @@ class IsortPlugin(CheckersPlugin):
     finish_msg = "All done.\n"
 
     @property
-    def cmd_flags(self) -> list[str]:
-        """Command flags."""
-        return ["--diff", "--color"]
-
-    @property
     def is_error(self) -> bool:
         """Tool-specific error logic."""
         return "@@" in self.cmd_output
 
+    @property
+    def cmd_flags(self) -> list[str]:
+        """Command flags."""
+        return ["--diff", "--color"]
 
-tools_map: dict[Tool, type[CheckersPlugin]] = {
-    "black": BlackPlugin,
-    "isort": IsortPlugin,
-    "flake8": Flake8Plugin,
-    "ruff": RuffPlugin,
-    "mypy": MypyPlugin,
-    "ty": TyPlugin,
-    "pyright": PyrightPlugin,
+
+class ToolMapDictValues(typing.TypedDict):
+    """ToolMapDictValues."""
+
+    tool_cls: type[CheckersPlugin]
+    help_: str
+
+
+tools_map: dict[Tool, ToolMapDictValues] = {
+    "black": {"tool_cls": BlackPlugin, "help_": "Enable `black --diff`"},
+    "isort": {"tool_cls": IsortPlugin, "help_": "Enable `isort --diff`"},
+    "flake8": {"tool_cls": Flake8Plugin, "help_": "Enable `flake8`"},
+    "ruff": {"tool_cls": RuffPlugin, "help_": "Enable `ruff check`"},
+    "mypy": {"tool_cls": MypyPlugin, "help_": "Enable `mypy`"},
+    "ty": {"tool_cls": TyPlugin, "help_": "Enable `ty check`"},
+    "pyright": {"tool_cls": PyrightPlugin, "help_": "Enable `pyright`"},
 }
 added_options: list[Tool] = []
-
-
-def _conditional_addoption(group: pytest.OptionGroup, /, *, tool: Tool, help_: str, action: str = "store_true") -> None:
-    with contextlib.suppress(importlib.metadata.PackageNotFoundError):
-        _ = importlib.metadata.version(tool)
-        group.addoption(f"--{tool}", action=action, help=help_)
-        added_options.append(tool)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     """Set hooks."""
     group = parser.getgroup("checkers")
     group.addoption("--checkers", action="store_true", help="Enable all available checks")
-    _conditional_addoption(group, tool="black", help_="Enable `black --diff`")
-    _conditional_addoption(group, tool="isort", help_="Enable `isort --diff`")
-    _conditional_addoption(group, tool="flake8", help_="Enable `flake8`")
-    _conditional_addoption(group, tool="ruff", help_="Enable `ruff check`")
-    _conditional_addoption(group, tool="mypy", help_="Enable `mypy`")
-    _conditional_addoption(group, tool="ty", help_="Enable `ty check`")
-    _conditional_addoption(group, tool="pyright", help_="Enable `pyright`")
+    for tool, v in tools_map.items():
+        with contextlib.suppress(importlib.metadata.PackageNotFoundError):
+            _ = importlib.metadata.version(tool)
+            help_ = v["help_"]
+            group.addoption(f"--{tool}", action="store_true", help=help_)
+            added_options.append(tool)
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -274,5 +255,5 @@ def pytest_configure(config: pytest.Config) -> None:
         if config.option.checkers:
             setattr(config.option, tool, True)
         if getattr(config.option, tool, False):
-            tool_cls = tools_map[tool]
+            tool_cls = tools_map[tool]["tool_cls"]
             config.pluginmanager.register(tool_cls(config), name=tool)

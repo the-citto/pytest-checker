@@ -27,7 +27,7 @@ either of the above, or
 
 `pytest_checkers[all]`
 
-simple flags: `--ruff` `--mypy` etc. or just `--checkers` for all the dependencies installed. 
+Simple flags: `--ruff` `--mypy` etc. or just `--checkers` for all the dependencies installed. 
 
 Use `pyproject.toml` (and `.flake8` until they finally decide to move)
 for your preferred settings for every tool.

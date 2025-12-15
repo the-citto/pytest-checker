@@ -12,6 +12,11 @@ import typing
 
 from _pytest.reports import TestReport
 
+try:
+    from isort.format import colorama_unavailable
+except ImportError:
+    colorama_unavailable = True
+
 if typing.TYPE_CHECKING:
     import pytest
     from _pytest.terminal import TerminalReporter
@@ -192,7 +197,7 @@ class BlackPlugin(CheckersPlugin):
     @property
     def is_error(self) -> bool:
         """Tool-specific error logic."""
-        return "@@" in self.cmd_output
+        return "@@" in self.cmd_output or "fail to reformat" in self.cmd_output
 
     @property
     def cmd_flags(self) -> list[str]:
@@ -215,6 +220,8 @@ class IsortPlugin(CheckersPlugin):
     @property
     def cmd_flags(self) -> list[str]:
         """Command flags."""
+        if colorama_unavailable:
+            return ["--diff"]
         return ["--diff", "--color"]
 
 
@@ -225,7 +232,7 @@ class ToolMapDictValues(typing.TypedDict):
     help_: str
 
 
-tools_map: dict[Tool, ToolMapDictValues] = {
+TOOLS_MAP: dict[Tool, ToolMapDictValues] = {
     "black": {"tool_cls": BlackPlugin, "help_": "Enable `black --diff`"},
     "isort": {"tool_cls": IsortPlugin, "help_": "Enable `isort --diff`"},
     "flake8": {"tool_cls": Flake8Plugin, "help_": "Enable `flake8`"},
@@ -241,7 +248,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     """Set hooks."""
     group = parser.getgroup("checkers")
     group.addoption("--checkers", action="store_true", help="Enable all available checks")
-    for tool, v in tools_map.items():
+    for tool, v in TOOLS_MAP.items():
         with contextlib.suppress(importlib.metadata.PackageNotFoundError):
             _ = importlib.metadata.version(tool)
             help_ = v["help_"]
@@ -255,5 +262,5 @@ def pytest_configure(config: pytest.Config) -> None:
         if config.option.checkers:
             setattr(config.option, tool, True)
         if getattr(config.option, tool, False):
-            tool_cls = tools_map[tool]["tool_cls"]
+            tool_cls = TOOLS_MAP[tool]["tool_cls"]
             config.pluginmanager.register(tool_cls(config), name=tool)

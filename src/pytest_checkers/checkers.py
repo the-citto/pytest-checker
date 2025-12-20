@@ -10,7 +10,7 @@ import subprocess
 import sys
 import typing
 
-from _pytest.reports import TestReport
+import pytest
 
 try:
     from isort.format import colorama_unavailable
@@ -18,9 +18,11 @@ except ImportError:
     colorama_unavailable = True
 
 if typing.TYPE_CHECKING:
-    import pytest
+    from _pytest._code.code import (
+        TerminalRepr,
+        TracebackStyle,
+    )
     from _pytest.terminal import TerminalReporter
-
 
 Tool = typing.Literal["black", "flake8", "isort", "mypy", "pyright", "ruff", "ty"]
 EscTable = typing.Literal[
@@ -45,6 +47,33 @@ EscTable = typing.Literal[
     "blink",
     "invert",
 ]
+
+
+class PluginItem(pytest.Item):
+    """PluginItem."""
+
+    def runtest(self) -> None:
+        """Run test."""
+        plugin = self.config.pluginmanager.get_plugin(self.name)
+        if not isinstance(plugin, CheckersPlugin):
+            pytest.exit(f"Internal Error: {self.name} plugin not found during runtest")
+        plugin.run_tool()  # ty: ignore[possibly-missing-attribute]
+        if plugin.is_error:  # ty: ignore[possibly-missing-attribute]
+            fail_msg = f"{self.name} failed with output:\n{plugin.cmd_output}"
+            raise pytest.fail(fail_msg)
+
+    def repr_failure(
+        self,
+        excinfo: pytest.ExceptionInfo[BaseException],
+        style: TracebackStyle | None = None,
+    ) -> str | TerminalRepr:
+        """Repr failure."""
+        _ = excinfo, style
+        return f"{self.name} failed with output..."
+
+    def reportinfo(self) -> tuple[os.PathLike[str] | str, int | None, str]:
+        """Report info."""
+        return self.path, 0, f"tool: {self.name}"
 
 
 class CheckersPlugin(abc.ABC):
@@ -74,48 +103,17 @@ class CheckersPlugin(abc.ABC):
         return env_vars
 
     @property
-    # @abc.abstractmethod
     def is_error(self) -> bool:
         """Tool-specific error logic."""
         return self.cmd_returncode != 0
 
-    def generate_report(self, session: pytest.Session, *, outcome: typing.Literal["passed", "failed"]) -> None:
-        """Generate report."""
-        project_root = session.config.rootpath
-        nodeid = f"{self.tool} check"
-        location = (str(project_root), 0, nodeid)
-        longrepr: tuple[str, int, str] | None = None
-        sections: list[tuple[str, str]] = []
-        if outcome == "failed":
-            longrepr = (f"{self.tool} failure", 0, "code quality checks failed, see output above.")
-            sections = [(f"{self.tool} output", self.cmd_output)]
-        report = TestReport(
-            nodeid=nodeid,
-            location=location,
-            keywords={nodeid: 1},
-            when="call",
-            longrepr=longrepr,
-            sections=sections,
-            outcome=outcome,
-        )
-        reporter = session.config.pluginmanager.get_plugin("terminalreporter")
-        if reporter:
-            reporter.stats.setdefault(outcome, []).append(report)
-
-    def pytest_sessionfinish(self, session: pytest.Session) -> None:
-        """Pytest session finish."""
-        if not getattr(self.config.option, self.tool, False):
-            return
-        project_root = session.config.rootpath
+    def run_tool(self) -> None:
+        """Run tool."""
+        project_root = self.config.rootpath
         cmd = [sys.executable, "-m", self.tool, *self.cmd_flags, str(project_root)]
         result = subprocess.run(cmd, capture_output=True, text=True, check=False, env=self.env_vars)  # noqa: S603
         self.cmd_output = result.stdout + result.stderr
         self.cmd_returncode = result.returncode
-        if self.is_error:
-            self.generate_report(session, outcome="failed")
-        else:
-            self.cmd_output += self.finish_msg
-            self.generate_report(session, outcome="passed")
 
     def pytest_terminal_summary(self, terminalreporter: TerminalReporter) -> None:
         """Pytest terminal summary."""
@@ -126,12 +124,23 @@ class CheckersPlugin(abc.ABC):
         terminalreporter.write_sep(title=f"tests {self.tool}", sep="=", **header_markup_kwarg)
         terminalreporter.write(self.cmd_output)
 
+    def pytest_collection_modifyitems(
+        self,
+        session: pytest.Session,
+        config: pytest.Config,
+        items: list[pytest.Item],
+    ) -> None:
+        """Pytest collection modify item."""
+        _ = config
+        item = PluginItem.from_parent(session, name=self.tool)  # pyright: ignore[reportUnknownMemberType]
+        items.append(item)
+
 
 class PyrightPlugin(CheckersPlugin):
     """Pyright plugin."""
 
     tool = "pyright"
-    header_markup = "green"
+    header_markup = "yellow"
 
     @property
     def cmd_flags(self) -> list[str]:
@@ -143,7 +152,7 @@ class TyPlugin(CheckersPlugin):
     """Ty plugin."""
 
     tool = "ty"
-    header_markup = "green"
+    header_markup = "yellow"
 
     @property
     def cmd_flags(self) -> list[str]:
@@ -155,7 +164,7 @@ class MypyPlugin(CheckersPlugin):
     """Mypy plugin."""
 
     tool = "mypy"
-    header_markup = "green"
+    header_markup = "blue"
 
     @property
     def cmd_flags(self) -> list[str]:

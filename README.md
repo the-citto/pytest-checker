@@ -3,6 +3,7 @@
 [python_versions]: https://img.shields.io/pypi/pyversions/pytest-checkers.svg?logo=python&logoColor=white
 [github_license]: https://img.shields.io/github/license/the-citto/pytest-checkers.svg?logo=github&logoColor=white
 [coverage]: ./docs/coverage.svg
+[tox_tests]: https://github.com/the-citto/pytest-checkers/actions/workflows/tox-tests.yml/badge.svg
 <!-- [github_action_tests]: https://github.com/the-citto/culting/actions/workflows/tests.yml/badge.svg -->
 
 [![GitHub Release][github_release]](https://github.com/the-citto/pytest-checkers/releases/)
@@ -10,6 +11,9 @@
 [![Python Versions][python_versions]](https://pypi.org/project/pytest-checkers/)
 [![License][github_license]](https://github.com/the-citto/pytest-checkers/blob/master/LICENSE)
 [![Coverage][coverage]](https://github.com/the-citto/pytest-checkers/)
+[![Tox tests][tox_tests]](https://github.com/the-citto/pytest-checkers/actions/workflows/tox-tests.yml)
+![Python](https://img.shields.io/badge/python-3.13-blue.svg)
+![Python](https://img.shields.io/badge/python-3.14-blue.svg)
 <br>
 
 

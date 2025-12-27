@@ -12,6 +12,7 @@
 [![License][github_license]](https://github.com/the-citto/pytest-checkers/blob/master/LICENSE)
 [![Coverage][coverage]](https://github.com/the-citto/pytest-checkers/)
 [![Tox tests][tox_tests]](https://github.com/the-citto/pytest-checkers/actions/workflows/tox-tests.yml)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/pytest-checkers)
 <br>
 
 

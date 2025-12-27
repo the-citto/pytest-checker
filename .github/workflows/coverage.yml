@@ -1,0 +1,46 @@
+name: Unit Tests for Coverage Badge
+
+on:
+  push:
+    branches: 
+      - main
+      - development
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --all-groups --all-extras
+
+      - name: Run unit tests with coverage
+        run: |
+          uv run coverage run -m pytest tests/test_units.py
+
+      - name: Generate Coverage Badge
+        uses: tj-actions/coverage-badge-py@v2
+        with:
+          output: docs/coverage.svg
+
+      - name: Commit and push coverage badge
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          file_pattern: coverage.svg
+          commit_message: "docs: update unit test coverage badge"
+

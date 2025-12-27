@@ -1,6 +1,6 @@
 [project]
 name = "pytest-checkers"
-version = "1.0.2"
+version = "1.0.3"
 description = "Pytest Plugin for dry-run checks LSPs, Type Checkers, Linters, and Formatters during testing"
 readme = "README.md"
 authors = [
